@@ -3,7 +3,6 @@ header("Content-type: text/xml");
 
 function curl($url){
     $ch = curl_init();
-	curl_setopt($ch, CURLOPT_HEADER, 1);
     curl_setopt($ch, CURLOPT_URL,$url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
     return curl_exec($ch);
