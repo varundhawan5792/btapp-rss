@@ -1,0 +1,343 @@
+<html>
+	<head>
+	<script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>  
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/json2/20110223/json2.js"></script>  
+	<script src="http://underscorejs.org/underscore-min.js"></script>  
+	<script src="http://backbonejs.org/backbone-min.js"></script>  
+	<script src="https://raw.github.com/andris9/jStorage/master/jstorage.js"></script>  
+
+	<script src="http://torque.bittorrent.com/btapp/btapp.js"></script>  
+	<script src="http://torque.bittorrent.com/btapp/client.btapp.js"></script>  
+	<script src="http://torque.bittorrent.com/btapp/plugin.btapp.js"></script>  
+	<script src="http://torque.bittorrent.com/btapp/pairing.btapp.js"></script>  
+
+	<!-- Backbrace was developed specifically to help with Backbone structures arranged like ours -->
+	<script src="https://raw.github.com/bittorrenttorque/backbrace/master/backbrace.js">
+    </script>
+
+	<!--
+	<script type="text/javascript" src="javascripts/application.js"></script>
+    -->
+    <script type="text/javascript">
+		var btapp
+		function startBT() {
+			function notice(event) {
+				$('#notice').append('<div class="alert alert-success">' + event + '</div>');
+			}
+		
+			btapp = new Btapp();
+			btapp.connect();
+		
+			btapp.on('add:add', function(add) {
+				//add.torrent('http://featuredcontent.utorrent.com/torrents/CountingCrows-BitTorrent.torrent')
+				//add.torrent('magnet:?xt=urn:btih:2110C7B4FA045F62D33DD0E01DD6F5BC15902179&dn=CountingCrows-BitTorrent&tr=udp://tracker.openbittorrent.com:80/announce')
+				notice('ready to add torrents');
+			});
+		
+			btapp.on('add:settings', function(settings) {
+				notice('ready to play with settings');
+			});
+		
+			btapp.on('add:torrent', function(torrent_list) {
+				notice('we have ' + torrent_list.length + ' torrents');
+			});
+		
+			btapp.on('add:dht', function(dht) {
+				notice('we have access to the dht');
+			});
+		
+			btapp.live('torrent * file * properties name', function(name) {
+				notice('we have a file in a torrent: ' + name);
+			});
+		}
+	</script>
+    <script type="text/javascript">
+		function showLoader(msg, timeout){
+			timeout = typeof timeout !== 'undefined' ? timeout : 0;
+			$("#loader").html(msg);
+			$("#loader").animate({"marginTop":"0px", "opacity":"1"});
+			if(timeout!=0){
+				setTimeout(function(){
+					$("#loader").animate({"marginTop":"-60px", "opacity":"0"});
+				}, timeout)	
+			}
+		}
+		function allowDrop(ev)
+		{
+			ev.preventDefault();
+			
+		}
+		function allowDelete(ev)
+		{
+			ev.preventDefault();
+			$("#bin").removeClass("move_bin");
+			$("#bin").addClass("scale");
+		}
+		function allowDeleteLeave(ev)
+		{
+			ev.preventDefault();
+			$("#bin").addClass("move_bin");
+			$("#bin").removeClass("scale");
+		}
+		function dragstop(){
+			$("#bin").fadeOut();
+			$("#drop_box").fadeOut();
+			$("#bin").removeClass("move_bin");
+			$("#bin").removeClass("scale");
+		}
+		function drag(ev)
+		{
+			$("#drop_box").fadeIn();
+			$("#bin").addClass("move_bin");
+			$("#bin").fadeIn();
+			ev.dataTransfer.setData("Text", ev.target.id);
+		}
+		
+		function drop(ev)
+		{
+			ev.preventDefault();
+			var data = ev.dataTransfer.getData("Text");
+			var torrent_link = $("#"+data).find("a").attr("href");
+			showLoader("Torrent added.", 3000);
+			$("#item_container").find("#"+data).remove();
+			/** add torrent to download **/
+			
+			window.btapp = new Btapp();
+			btapp.connect();
+		
+			btapp.on('add:add', function(add) {
+				// alert(torrent_link)
+				add.torrent(torrent_link)
+				showLoader("Please wait for the download to start.", 4000);
+			});
+			
+			
+			/** torrent added **/
+			$("#bin").fadeOut();
+			$("#drop_box").fadeOut();
+			$("#bin").removeClass("move_bin");
+			$("#bin").removeClass("scale");
+		}
+		
+		function deleteItem(ev)
+		{
+			ev.preventDefault();
+			var data = ev.dataTransfer.getData("Text");
+			$("#item_container").find("#"+data).remove();
+			showLoader("Item deleted.", 3000);
+			$("#bin").fadeOut();
+			$("#drop_box").fadeOut();
+			$("#bin").removeClass("move_bin");
+			$("#bin").removeClass("scale");
+		}
+		function removeTorrent(ev)
+		{
+			$("#bin").addClass("move_bin");
+			$("#bin").fadeIn();
+			ev.dataTransfer.setData("Text", ev.target.id);
+		}
+	</script>
+	<script type="text/javascript">
+		var cnt = 1;
+		function saveURL(url){
+			if (typeof(localStorage) == 'undefined' ) {
+			} else {
+				try {
+					localStorage.url = url;
+				} catch (e) {
+					 if (e == QUOTA_EXCEEDED_ERR) {
+						 alert('Quota exceeded!');
+					}
+				}
+			}
+		}
+		function getURL(){
+			if (typeof(localStorage) == 'undefined' ) {
+			} else {
+				try {
+					if (!localStorage.url)
+					{
+					   return "http://showrss.karmorra.info/rss.php?user_id=94756&hd=1&proper=null";
+					}
+					else{
+						return localStorage.url;
+					}
+				} catch (e) {
+					 if (e == QUOTA_EXCEEDED_ERR) {
+						 alert('Quota exceeded!');
+					}
+				}
+			}
+		}
+		function addXMLData(xmlData){
+			if (typeof(localStorage) == 'undefined' ) {
+			} else {
+				try {
+					if (localStorage.xmlcount)
+					{
+					  localStorage.xmlcount = Number(localStorage.xmlcount)+1;
+					}
+					else
+					{
+					  localStorage.xmlcount = 1;
+					}
+					localStorage.setItem("xml_"+localStorage.xmlcount, xmlData);
+				} catch (e) {
+					 if (e == QUOTA_EXCEEDED_ERR) {
+						 alert('Quota exceeded!');
+					}
+				}
+			}
+		}
+		function addURL(url){
+				saveURL(url);
+				url = "get_url.php?url=" + encodeURI(url);
+				var title;
+				var details;
+				
+				$.ajax({
+					type: "GET",
+					url: url,
+					dataType: "xml",
+					success: function(xml) {
+						
+						title = $(xml).find("title").eq(0).text();
+						
+						$(xml).find("item").each(function(){
+							var torrent_link = $(this).find("link").text();
+							var torrent_name = $(this).find("title").text();
+							var html = 
+							'<div class="item" draggable="true" ondragstart="drag(event)" ondragend="dragstop(event)" id="'+cnt+'">'+
+								'<div class="title"><a href="'+ torrent_link +'">'+
+									torrent_name +
+								'</a></div>'+
+							'</div>';
+							cnt ++;
+							$("#item_container").html(html+$("#item_container").html())
+							
+						})
+					},
+					complete:function(xml){
+						$('#loader').animate({"marginTop":"-60px", "opacity":"0"});
+						var html = 
+						'<div class="item">'+
+							'<div class="title">'+
+								title+
+							'</div>'+
+						'</div>';
+						//$("#item_container").html(html+$("#item_container").html())
+						//addXMLData(xml);
+					}
+				});
+		}
+		$(window).load(function(){
+			jQuery.ajaxSetup({
+			  beforeSend: function() {
+				$('#loader').html("loading");
+				$('#loader').animate({"marginTop":"0", "opacity":"1"});
+			  },
+			  complete: function(){
+				$('#loader').animate({"marginTop":"-60px", "opacity":"0"});
+			  },
+			  success: function() {
+				 $('#loader').animate({"marginTop":"-60px", "opacity":"0"});
+			  }
+			});
+			var url = getURL();
+			if(url!=""){
+				$('#input input').val(url);
+				addURL(url);
+			}
+			$("#add_url img").click(function(){
+				addURL($('#input input').val());
+			})
+			$('#input input').bind('keypress', function(e) {
+				var code = (e.keyCode ? e.keyCode : e.which);
+				if(code == 13) { 
+				   	addURL($('#input input').val());
+				}
+			})
+			
+			/* Connect to btapp */
+			window.btapp = new Btapp();
+			btapp.connect();
+			btapp.on('add:add', function(add) {
+			})
+			btapp.on('add:torrent', function(torrent_list) {
+				if(torrent_list.length == 1)
+					$("#tor_desc").html('' + torrent_list.length + ' torrent live.');
+				else
+					$("#tor_desc").html('' + torrent_list.length + ' torrents live.');
+			});
+			btapp.on('add:dht', function(dht) {
+			});
+			btapp.live('torrent * file * properties name', function(name) {
+				var html = 
+				'<div class="item" id="removable"  ondragstart="removeTorrent(event)">'+
+					'<div class="title">'+
+						name +
+					'</div>'+
+				'</div>';
+				$(".right .container").append(html);
+				var length = window.btapp.get('torrent').length;
+				if(length == 1)
+					$("#tor_desc").html('' + length + ' torrent live.');
+				else
+					$("#tor_desc").html('' + length + ' torrents live.');
+			});
+		})
+	</script>
+	<link rel="stylesheet" type="text/css" href="stylesheets/bootstrap.min.css" />	
+    <link rel="stylesheet" type="text/css" href="stylesheets/custom.css" />	
+    <title>btapp.RSS</title>
+</head>
+<body>
+    <div id="notice" style="position:fixed;height:30%;width:100%;overflow:auto;bottom:0px;display:none;">
+		
+    </div>
+    <div id="header">
+    	<a href="./"><img src="images/logo.png" border="0"></a>
+    </div>
+    <div id="body_container">
+    	<div class="icon_container">
+        	<div id="add_url" class="icon">
+                <span id="input">
+                	<input type="text" placeholder="Paste URL and press Enter Key.">
+                </span>
+                <img src="images/add.png" />
+                <span class="name">example, <a href="http://showrss.karmorra.info/">showRSS</a>, etc</span>	
+            </div>
+            <div id="add_rss" class="icon" style="display:none;"><img src="images/rss-icon.png" /></div>
+        </div>
+    	<div class="left">
+        	<div class="heading">
+            	All <span class="blue">Feeds</span><span class="desc">drag them to download.</span>
+            </div>
+            <div class="container">
+            	<div id="item_container">
+                
+            	</div>
+            </div>
+        </div>
+        <div class="right">
+        	<div class="heading">
+            	View <span class="blue">Torrents</span><span class="desc" id="tor_desc">a list of your torrents.</span>
+            </div>
+            <div id="drop_box" ondrop="drop(event)" ondragover="allowDrop(event)">
+            	Drop here to start downloading.
+            </div>
+            <div class="container"> 
+            
+            </div>
+        </div>
+    </div>
+    
+    <div id="loader">
+        loading
+    </div>
+    
+    <div id="bin" ondrop="deleteItem(event)" ondragover="allowDelete(event)" ondragleave="allowDeleteLeave(event)">
+    	<img src="images/bin-icon.png">
+    </div>
+</body>
+</html>
